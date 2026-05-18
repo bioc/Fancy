@@ -58,6 +58,45 @@ This hybrid approach captures **nonlinear** associations between MAGs,
 including threshold effects, competitive exclusion, and other ecological
 interactions that linear correlation measures miss.
 
+## Positioning relative to existing Bioconductor packages
+
+Existing microbial association frameworks in Bioconductor and CRAN span
+several methodological classes that differ in their assumptions about
+linearity, sparsity, and conditional independence:
+
+| Class of method | Representative tools | Core idea | Limitation relevant to FANCY |
+|---|---|---|---|
+| Correlation / co-expression modules | `WGCNA` | Pearson/biweight correlation, hierarchical module detection | Mainly captures linear or monotonic dependence |
+| Mutual-information networks | `minet` (CLR, ARACNE, MRNET) | Information-theoretic dependence | No explicit frequency or ecological-coordination weighting |
+| Sparse conditional-dependence graphs | `SpiecEasi`, glasso-based methods | Sparse precision matrices, indirect-edge reduction | Assumes sparse graphical structure; can miss nonlinear ecological relationships |
+| Association ensembles | `CoNet` and similar | Combine multiple association metrics | Flexible but not specifically tuned to nonlinear ecological coordination |
+
+FANCY was developed as a **complementary** framework that emphasises
+nonlinear and context-dependent ecological associations through a hybrid
+dependence-scoring strategy combining information-theoretic and
+frequency-aware components. Rather than inferring direct or conditional-
+independence interaction networks, FANCY is intended for **exploratory
+identification of coordinated microbial structure and module
+organisation** that may be difficult to capture using purely correlation-
+or precision-based approaches. The package is best understood as
+hypothesis-generating: it surfaces nonlinear and potentially state-
+dependent ecological associations that warrant follow-up with
+mechanistic or causal-inference methods.
+
+## Integration with the Bioconductor microbiome workflow
+
+FANCY is designed to slot into standard Bioconductor microbiome
+analyses. Input abundance tables can be derived from `phyloseq` or
+`mia` / `SummarizedExperiment` workflows — for example, by extracting
+an `otu_table()` and applying a CLR transform via `compositions` (which
+FANCY imports) before passing the resulting samples × MAGs matrix to
+`fancy()`. The resulting edge tables and module assignments are
+returned as standard data frames and adjacency matrices, ready for
+downstream graph analysis with `igraph`, `tidygraph` or `ggraph`, or
+for export to Cytoscape via the workflow described later in this
+vignette. FANCY therefore complements rather than replaces existing
+Bioconductor microbiome and network packages.
+
 ```{r load-library, message=FALSE}
 library(Fancy)
 ```
@@ -598,7 +637,7 @@ To import into Cytoscape:
 To save all pipeline and intermediate objects for later use without
 re-running the bootstrap:
 
-```{r save-objects, eval=TRUE}
+```{r save-objects, eval=FALSE}
 save(result, net_input,
      fancy_tiny_clr, fancy_tiny_counts, fancy_tiny_coverage,
      fancy_tiny_taxonomy, fancy_tiny_metadata,

@@ -3,9 +3,9 @@
 .RData
 .httr-oauth
 .DS_Store
-.claude/
 *.tar.gz
 Fancy.Rcheck/
+Fancy.BiocCheck/
 src/*.o
 src/*.so
 src/*.dll
@@ -13,3 +13,11 @@ SnowfallSlaveOutput*.txt
 /doc/
 /Meta/
 /sort/
+
+# One-off transfer/sync scripts and their outputs (not part of the package)
+/_github_staging/
+/*.log
+/*.err
+/*.ps1
+/transfer_log.txt
+/Andy_Cow_transfer_manifest.csv

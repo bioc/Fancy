@@ -48,6 +48,7 @@ Suggests:
     magick
 biocViews:
     NetworkInference,
+    Network,
     Metagenomics,
     Microbiome,
     StatisticalMethod

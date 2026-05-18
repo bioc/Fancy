@@ -1,11 +1,12 @@
 # IDE / tooling
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^\.claude$
 
-# Analysis subdirectory
+# Analysis subdirectories (not part of the R package itself)
 ^Simplified$
 ^sort$
+^_github_staging$
+^data-raw$
 
 # Planning / notes
 ^PACKAGING_PLAN\.md$
@@ -22,13 +23,13 @@
 ^09_
 ^81_
 
-# Top-level data files by extension (root-anchored)
+# Top-level data and operational files by extension (root-anchored)
 ^[^/]*\.RData$
 ^\.RData$
 ^[^/]*\.Rhistory$
 ^\.Rhistory$
 ^[^/]*\.rds$
-^[^/]*\.csv
+^[^/]*\.csv$
 ^[^/]*\.tsv$
 ^[^/]*\.txt$
 ^[^/]*\.tar\.gz$
@@ -40,9 +41,9 @@
 ^[^/]*\.faa$
 ^[^/]*\.sif$
 ^[^/]*\.cys$
-
-# Data generation script (not shipped)
-^data-raw$
+^[^/]*\.ps1$
+^[^/]*\.log$
+^[^/]*\.err$
 
 # Package map (documentation, not shipped)
 ^PACKAGE_MAP\.md$
@@ -55,10 +56,6 @@
 ^To_refer$
 ^Fancy_workflow_files$
 ^vignettes/vignette_objects\.RData$
-
-# Documentation not shipped in tarball
-^README\.md$
-^NEWS\.md$
 
 # Standard ignores
 ^LICENSE\.md$

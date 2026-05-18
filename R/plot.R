@@ -205,8 +205,15 @@ plot_network <- function(
   )
   # set.seed(42)
   if (identical(layout_fun, igraph::layout_with_fr)) {
-    coords <- layout_fun(g, niter = 1000,
-                         area = igraph::vcount(g)^2.8)
+    coords <- layout_fun(g, niter = 1000)
+    # igraph 0.8.0 made layout_with_fr()'s `area` argument defunct.
+    # Rescale coordinates to preserve the prior visual spread, which
+    # was equivalent to area = vcount(g)^2.8 in the old API.
+    target_area <- igraph::vcount(g)^2.8
+    span <- max(abs(coords))
+    if (is.finite(span) && span > 0) {
+      coords <- coords * sqrt(target_area) / (2 * span)
+    }
   } else {
     coords <- layout_fun(g)
   }
