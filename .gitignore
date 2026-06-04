@@ -1,9 +1,11 @@
 .Rproj.user/
 .Rhistory
+Fancy.Rproj
 .RData
 .httr-oauth
 .DS_Store
 *.tar.gz
+.claude/
 Fancy.Rcheck/
 Fancy.BiocCheck/
 src/*.o
