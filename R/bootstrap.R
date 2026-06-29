@@ -12,15 +12,17 @@
 #' @importFrom snowfall sfInit sfStop sfLibrary
 #' @keywords internal
 .init_snowfall <- function(cpus, slave_outfile = NULL) {
-  if (is.null(slave_outfile)) {
-    slave_outfile <- if (.Platform$OS.type == "windows") "nul" else "/dev/null"
-  }
-  snowfall::sfStop()
-  snowfall::sfInit(parallel = TRUE, cpus = cpus,
-                   slaveOutfile = slave_outfile)
-  snowfall::sfLibrary("minet",  character.only = TRUE)
-  snowfall::sfLibrary("energy", character.only = TRUE)
-  snowfall::sfLibrary("knnmi",  character.only = TRUE)
+    if (is.null(slave_outfile)) {
+        slave_outfile <- if (.Platform$OS.type == "windows") "nul" else "/dev/null"
+    }
+    snowfall::sfStop()
+    snowfall::sfInit(
+        parallel = TRUE, cpus = cpus,
+        slaveOutfile = slave_outfile
+    )
+    snowfall::sfLibrary("minet", character.only = TRUE)
+    snowfall::sfLibrary("energy", character.only = TRUE)
+    snowfall::sfLibrary("knnmi", character.only = TRUE)
 }
 
 # -------------------------------------------------------------------
@@ -43,41 +45,41 @@
 #'
 #' @keywords internal
 .bootstrap_single <- function(iter, data, k, use_mrnet) {
-  resampled <- data[sample(nrow(data), replace = TRUE), ]
+    resampled <- data[sample(nrow(data), replace = TRUE), ]
 
-  mi_matrix <- compute_mi_matrix(resampled, k = k)
+    mi_matrix <- compute_mi_matrix(resampled, k = k)
 
-  if (use_mrnet) {
-    mi_edges <- compute_mrnet_network(mi_matrix)
-  } else {
-    mi_edges <- .extract_mi_edges(mi_matrix)
-  }
+    if (use_mrnet) {
+        mi_edges <- compute_mrnet_network(mi_matrix)
+    } else {
+        mi_edges <- .extract_mi_edges(mi_matrix)
+    }
 
-  dcor_matrix <- compute_dcor_matrix(resampled)
-  gc()
+    dcor_matrix <- compute_dcor_matrix(resampled)
+    gc()
 
-  # Extract dCor edges from upper triangle
-  n <- nrow(dcor_matrix)
-  source_vec <- character()
-  target_vec <- character()
-  weight_vec <- numeric()
+    # Extract dCor edges from upper triangle
+    n <- nrow(dcor_matrix)
+    source_vec <- character()
+    target_vec <- character()
+    weight_vec <- numeric()
 
-  for (i in seq_len(n - 1L)) {
-    js <- (i + 1L):n
-    source_vec <- c(source_vec, rownames(dcor_matrix)[js])
-    target_vec <- c(target_vec, rep(colnames(dcor_matrix)[i], length(js)))
-    weight_vec <- c(weight_vec, dcor_matrix[js, i])
-  }
+    for (i in seq_len(n - 1L)) {
+        js <- i + seq_len(n - i)
+        source_vec <- c(source_vec, rownames(dcor_matrix)[js])
+        target_vec <- c(target_vec, rep(colnames(dcor_matrix)[i], length(js)))
+        weight_vec <- c(weight_vec, dcor_matrix[js, i])
+    }
 
-  dcor_edges <- data.frame(
-    source = source_vec,
-    target = target_vec,
-    weight = weight_vec,
-    stringsAsFactors = FALSE
-  )
-  dcor_edges <- dcor_edges[dcor_edges$weight > 0, ]
+    dcor_edges <- data.frame(
+        source = source_vec,
+        target = target_vec,
+        weight = weight_vec,
+        stringsAsFactors = FALSE
+    )
+    dcor_edges <- dcor_edges[dcor_edges$weight > 0, ]
 
-  list(MRNET = mi_edges, dCor = dcor_edges)
+    list(MRNET = mi_edges, dCor = dcor_edges)
 }
 
 # -------------------------------------------------------------------
@@ -107,98 +109,104 @@
 #' @export
 #'
 #' @examples
-#' small_mat <- matrix(rnorm(50), nrow = 10, ncol = 5,
-#'                     dimnames = list(NULL, paste0("V", 1:5)))
+#' small_mat <- matrix(rnorm(50),
+#'     nrow = 10, ncol = 5,
+#'     dimnames = list(NULL, paste0("V", 1:5))
+#' )
 #' res <- bootstrap_networks(small_mat, n_bootstrap = 2, k = 2L, cpus = 1)
 #' names(res)[1:4]
 #'
 #' @importFrom snowfall sfInit sfStop sfExport sfClusterApplyLB sfLibrary sfCpus
 bootstrap_networks <- function(
-    data,
-    n_bootstrap = 100L,
-    k = 5L,
-    cpus = 4L,
-    use_mrnet = TRUE,
-    save_path = NULL
+  data,
+  n_bootstrap = 100L,
+  k = 5L,
+  cpus = 1L,
+  use_mrnet = TRUE,
+  save_path = NULL
 ) {
-  data <- as.matrix(data)
-  n_bootstrap <- as.integer(n_bootstrap)
-  k <- as.integer(k)
+    data <- as.matrix(data)
+    n_bootstrap <- as.integer(n_bootstrap)
+    k <- as.integer(k)
 
-  .init_snowfall(cpus)
-  on.exit(snowfall::sfStop(), add = TRUE)
+    .init_snowfall(cpus)
+    on.exit(snowfall::sfStop(), add = TRUE)
 
-  # Assign internal functions to local variables for export to workers
-  .bs_data <- data
-  .bs_k <- k
-  .bs_use_mrnet <- use_mrnet
-  .bs_compute_mi_matrix <- compute_mi_matrix
-  .bs_compute_mrnet_network <- compute_mrnet_network
-  .bs_extract_mi_edges <- .extract_mi_edges
-  .bs_compute_dcor_matrix <- compute_dcor_matrix
+    # Assign internal functions to local variables for export to workers
+    .bs_data <- data
+    .bs_k <- k
+    .bs_use_mrnet <- use_mrnet
+    .bs_compute_mi_matrix <- compute_mi_matrix
+    .bs_compute_mrnet_network <- compute_mrnet_network
+    .bs_extract_mi_edges <- .extract_mi_edges
+    .bs_compute_dcor_matrix <- compute_dcor_matrix
 
-  snowfall::sfExport(
-    ".bs_data", ".bs_k", ".bs_use_mrnet",
-    ".bs_compute_mi_matrix", ".bs_compute_mrnet_network",
-    ".bs_extract_mi_edges", ".bs_compute_dcor_matrix",
-    local = TRUE
-  )
-
-  worker_fn <- function(iter) {
-    resampled <- .bs_data[sample(nrow(.bs_data), replace = TRUE), ]
-
-    mi_matrix <- .bs_compute_mi_matrix(resampled, k = .bs_k)
-
-    if (.bs_use_mrnet) {
-      mi_edges <- .bs_compute_mrnet_network(mi_matrix)
-    } else {
-      mi_edges <- .bs_extract_mi_edges(mi_matrix)
-    }
-
-    dcor_matrix <- .bs_compute_dcor_matrix(resampled)
-    gc()
-
-    n <- nrow(dcor_matrix)
-    source_vec <- character()
-    target_vec <- character()
-    weight_vec <- numeric()
-
-    for (i in seq_len(n - 1L)) {
-      js <- (i + 1L):n
-      source_vec <- c(source_vec, rownames(dcor_matrix)[js])
-      target_vec <- c(target_vec, rep(colnames(dcor_matrix)[i], length(js)))
-      weight_vec <- c(weight_vec, dcor_matrix[js, i])
-    }
-
-    dcor_edges <- data.frame(
-      source = source_vec,
-      target = target_vec,
-      weight = weight_vec,
-      stringsAsFactors = FALSE
+    snowfall::sfExport(
+        ".bs_data", ".bs_k", ".bs_use_mrnet",
+        ".bs_compute_mi_matrix", ".bs_compute_mrnet_network",
+        ".bs_extract_mi_edges", ".bs_compute_dcor_matrix",
+        local = TRUE
     )
-    dcor_edges <- dcor_edges[dcor_edges$weight > 0, ]
 
-    list(MRNET = mi_edges, dCor = dcor_edges)
-  }
+    worker_fn <- function(iter) {
+        resampled <- .bs_data[sample(nrow(.bs_data), replace = TRUE), ]
 
-  raw <- snowfall::sfClusterApplyLB(seq_len(n_bootstrap), worker_fn)
+        mi_matrix <- .bs_compute_mi_matrix(resampled, k = .bs_k)
 
-  # Flatten into named list
-  all_results <- list()
-  for (i in seq_along(raw)) {
-    result <- raw[[i]]
+        if (.bs_use_mrnet) {
+            mi_edges <- .bs_compute_mrnet_network(mi_matrix)
+        } else {
+            mi_edges <- .bs_extract_mi_edges(mi_matrix)
+        }
 
-    if (!is.null(save_path)) {
-      saveRDS(result, file.path(save_path,
-                                paste0("bootstrap_result_", i, ".rds")))
+        dcor_matrix <- .bs_compute_dcor_matrix(resampled)
+        gc()
+
+        n <- nrow(dcor_matrix)
+        source_vec <- character()
+        target_vec <- character()
+        weight_vec <- numeric()
+
+        for (i in seq_len(n - 1L)) {
+            js <- i + seq_len(n - i)
+            source_vec <- c(source_vec, rownames(dcor_matrix)[js])
+            target_vec <- c(target_vec, rep(colnames(dcor_matrix)[i], length(js)))
+            weight_vec <- c(weight_vec, dcor_matrix[js, i])
+        }
+
+        dcor_edges <- data.frame(
+            source = source_vec,
+            target = target_vec,
+            weight = weight_vec,
+            stringsAsFactors = FALSE
+        )
+        dcor_edges <- dcor_edges[dcor_edges$weight > 0, ]
+
+        list(MRNET = mi_edges, dCor = dcor_edges)
     }
 
-    names(result) <- c(paste0("MRNET_", i), paste0("dCor_", i))
-    all_results <- c(all_results, result)
-  }
+    raw <- snowfall::sfClusterApplyLB(seq_len(n_bootstrap), worker_fn)
 
-  message("All bootstrap iterations processed. Total iterations: ",
-          length(raw))
+    # Flatten into named list
+    all_results <- list()
+    for (i in seq_along(raw)) {
+        result <- raw[[i]]
 
-  all_results
+        if (!is.null(save_path)) {
+            saveRDS(result, file.path(
+                save_path,
+                paste0("bootstrap_result_", i, ".rds")
+            ))
+        }
+
+        names(result) <- c(paste0("MRNET_", i), paste0("dCor_", i))
+        all_results <- c(all_results, result)
+    }
+
+    message(
+        "All bootstrap iterations processed. Total iterations: ",
+        length(raw)
+    )
+
+    all_results
 }

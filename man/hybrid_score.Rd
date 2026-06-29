@@ -60,10 +60,10 @@ reliably.
 }
 \examples{
 edges <- data.frame(
-  source = c("MAG1", "MAG2", "MAG3"),
-  target = c("MAG2", "MAG3", "MAG4"),
-  EdgeFrequency = c(0.8, 0.5, 0.9),
-  Stability.dcor.scaled = c(0.7, 0.3, 0.85)
+    source = c("MAG1", "MAG2", "MAG3"),
+    target = c("MAG2", "MAG3", "MAG4"),
+    EdgeFrequency = c(0.8, 0.5, 0.9),
+    Stability.dcor.scaled = c(0.7, 0.3, 0.85)
 )
 scored <- hybrid_score(edges, w1 = 0.3, w2 = 0.7)
 scored$HybridScore

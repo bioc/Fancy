@@ -13,10 +13,10 @@
 
 cat("Loading existing 100x100 subset for MAG IDs and taxonomy...\n")
 dat100 <- readRDS("data-raw/real_subset_100x100.rds")
-mag_ids <- dat100$mags          # 100 original MAG IDs
-taxonomy <- dat100$taxonomy     # 100 x 7
+mag_ids <- dat100$mags # 100 original MAG IDs
+taxonomy <- dat100$taxonomy # 100 x 7
 known_mags <- dat100$known_mags # 4 known nonlinear MAG IDs
-all_taxonomy <- dat100$all_taxonomy  # full taxonomy table
+all_taxonomy <- dat100$all_taxonomy # full taxonomy table
 
 cat("Loading 02_preprocessed.RData...\n")
 load("02_preprocessed.RData")
@@ -38,13 +38,17 @@ cat("Loading coverage data...\n")
 cov_raw <- read.csv("Covered_fraction.csv", row.names = 1, check.names = FALSE)
 ## Coverage CSV column names match normalised_count column names
 cov_samples <- intersect(samples_321, colnames(cov_raw))
-cov_mags    <- intersect(mag_ids, rownames(cov_raw))
-cat("  Coverage available for", length(cov_mags), "of 100 MAGs and",
-    length(cov_samples), "of 321 samples\n")
+cov_mags <- intersect(mag_ids, rownames(cov_raw))
+cat(
+    "  Coverage available for", length(cov_mags), "of 100 MAGs and",
+    length(cov_samples), "of 321 samples\n"
+)
 
 ## Build coverage matrix; fill missing MAGs/samples with NA
-coverage_321 <- matrix(NA_real_, nrow = 100, ncol = 321,
-                       dimnames = list(mag_ids, samples_321))
+coverage_321 <- matrix(NA_real_,
+    nrow = 100, ncol = 321,
+    dimnames = list(mag_ids, samples_321)
+)
 coverage_321[cov_mags, cov_samples] <- as.matrix(cov_raw[cov_mags, cov_samples])
 
 cat("Building metadata for 321 samples...\n")
@@ -58,15 +62,15 @@ meta_321 <- meta_321[, c("Sample", "Breed", "CH4")]
 
 cat("Assembling final list...\n")
 result <- list(
-  clr        = clr_321,
-  counts     = counts_321,
-  coverage   = coverage_321,
-  taxonomy   = taxonomy,
-  metadata   = meta_321,
-  mags       = mag_ids,
-  samples    = samples_321,
-  known_mags = known_mags,
-  all_taxonomy = all_taxonomy
+    clr = clr_321,
+    counts = counts_321,
+    coverage = coverage_321,
+    taxonomy = taxonomy,
+    metadata = meta_321,
+    mags = mag_ids,
+    samples = samples_321,
+    known_mags = known_mags,
+    all_taxonomy = all_taxonomy
 )
 
 out_path <- "data-raw/real_subset_100x321.rds"

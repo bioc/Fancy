@@ -37,16 +37,13 @@ test_that("export_cytoscape writes node and edge tables for a thresholded result
         Stability.dcor.scaled = c(0.7, 0.3, 0.85),
         HybridScore = c(0.75, 0.4, 0.85)
     )
-    fake_result <- structure(
-        list(
-            edges = edges, all_edges = edges,
-            k = 5L, n_bootstrap = 2L,
-            params = list(
-                threshold_method = "quantile",
-                threshold_value = 0.7
-            )
-        ),
-        class = "fancy"
+    fake_result <- methods::new("FancyResult",
+        edges = edges, all_edges = edges,
+        k = 5, n_bootstrap = 2L,
+        params = list(
+            threshold_method = "quantile",
+            threshold_value = 0.7
+        )
     )
 
     tax <- fancy_tiny_taxonomy[seq_len(4), , drop = FALSE]

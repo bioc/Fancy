@@ -13,7 +13,7 @@ plot_network(
 )
 }
 \arguments{
-\item{fancy_result}{An object of class \code{"fancy"} as returned by
+\item{fancy_result}{A \linkS4class{FancyResult} object as returned by
 \code{\link[=fancy]{fancy()}}.}
 
 \item{taxonomy}{A data.frame with MAG IDs as row names and at least

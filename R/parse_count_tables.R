@@ -19,25 +19,25 @@
 #' @examples
 #' clean_sample_names(c("X12.34.AB.QUALITY_PASSED_R1.fastq.Read.Count"))
 clean_sample_names <- function(
-    x,
-    remove_prefix = TRUE,
-    dot_to_dash = TRUE,
-    suffix_patterns = c(
+  x,
+  remove_prefix = TRUE,
+  dot_to_dash = TRUE,
+  suffix_patterns = c(
       "\\.QUALITY_PASSED_R1\\.fastq\\.Read\\.Count$",
       "\\.QUALITY_PASSED_R1\\.fastq\\.Covered\\.Fraction$",
       "\\.QUALITY_PASSED_R1\\.fastq\\.Relative\\.Abundance.*$"
-    )
+  )
 ) {
-  for (pat in suffix_patterns) {
-    x <- gsub(pat, "", x)
-  }
-  if (remove_prefix) {
-    x <- gsub("^X", "", x)
-  }
-  if (dot_to_dash) {
-    x <- gsub("\\.", "-", x)
-  }
-  x
+    for (pat in suffix_patterns) {
+        x <- gsub(pat, "", x)
+    }
+    if (remove_prefix) {
+        x <- gsub("^X", "", x)
+    }
+    if (dot_to_dash) {
+        x <- gsub("\\.", "-", x)
+    }
+    x
 }
 
 # ---- Internal: read one column from a set of per-sample TSVs -------------
@@ -58,13 +58,15 @@ clean_sample_names <- function(
 #' @importFrom utils read.csv
 #' @keywords internal
 .read_column_from_tsvs <- function(file_paths, column, id_col = "mags_ids") {
-  purrr::map(file_paths, function(fp) {
-    file_data <- utils::read.csv(fp, header = TRUE, sep = "\t",
-                                 row.names = 1)
-    file_data <- file_data[, column, drop = FALSE]
-    tibble::rownames_to_column(file_data, var = id_col)
-  }) |>
-    purrr::reduce(dplyr::full_join, by = id_col)
+    purrr::map(file_paths, function(fp) {
+        file_data <- utils::read.csv(fp,
+            header = TRUE, sep = "\t",
+            row.names = 1
+        )
+        file_data <- file_data[, column, drop = FALSE]
+        tibble::rownames_to_column(file_data, var = id_col)
+    }) |>
+        purrr::reduce(dplyr::full_join, by = id_col)
 }
 
 # ---- Parse count tables --------------------------------------------------
@@ -97,47 +99,51 @@ clean_sample_names <- function(
 #' @examples
 #' d <- tempfile("tsvdir")
 #' dir.create(d)
-#' writeLines(c("MAG\tcount\trel_abund\tcov_frac",
-#'   "MAG1\t100\t0.5\t0.8", "MAG2\t200\t0.3\t0.6"),
-#'   file.path(d, "sample1.tsv"))
+#' writeLines(
+#'     c(
+#'         "MAG\tcount\trel_abund\tcov_frac",
+#'         "MAG1\t100\t0.5\t0.8", "MAG2\t200\t0.3\t0.6"
+#'     ),
+#'     file.path(d, "sample1.tsv")
+#' )
 #' tables <- parse_count_tables(d, drop_first_row = FALSE)
 #' tables$count
 #'
 #' @importFrom dplyr select
 parse_count_tables <- function(
-    path,
-    pattern = "*.tsv",
-    columns = c(
+  path,
+  pattern = "*.tsv",
+  columns = c(
       count = 1L,
       relative_abundance = 2L,
       covered_fraction = 3L
-    ),
-    clean_names = TRUE,
-    drop_first_row = TRUE
+  ),
+  clean_names = TRUE,
+  drop_first_row = TRUE
 ) {
-  file_paths <- list.files(path, pattern = pattern, full.names = TRUE)
-  if (length(file_paths) == 0L) {
-    stop("No files matching '", pattern, "' found in ", path)
-  }
-
-  result <- lapply(stats::setNames(columns, names(columns)), function(col) {
-    combined <- .read_column_from_tsvs(file_paths, column = col)
-
-    if (drop_first_row && nrow(combined) > 1L) {
-      combined <- combined[-1L, ]
+    file_paths <- list.files(path, pattern = pattern, full.names = TRUE)
+    if (length(file_paths) == 0L) {
+        stop("No files matching '", pattern, "' found in ", path)
     }
 
-    # Set MAG IDs as rownames
-    id_col <- colnames(combined)[1L]
-    rownames(combined) <- combined[[id_col]]
-    combined[[id_col]] <- NULL
+    result <- lapply(stats::setNames(columns, names(columns)), function(col) {
+        combined <- .read_column_from_tsvs(file_paths, column = col)
 
-    if (clean_names) {
-      colnames(combined) <- clean_sample_names(colnames(combined))
-    }
+        if (drop_first_row && nrow(combined) > 1L) {
+            combined <- combined[-1L, ]
+        }
 
-    combined
-  })
+        # Set MAG IDs as rownames
+        id_col <- colnames(combined)[1L]
+        rownames(combined) <- combined[[id_col]]
+        combined[[id_col]] <- NULL
 
-  result
+        if (clean_names) {
+            colnames(combined) <- clean_sample_names(colnames(combined))
+        }
+
+        combined
+    })
+
+    result
 }

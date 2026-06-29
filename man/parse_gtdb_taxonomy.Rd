@@ -36,10 +36,18 @@ When \code{fill_missing = TRUE} (the default):
 }
 \examples{
 tsv <- tempfile(fileext = ".tsv")
-writeLines(c(
-  "Strain\tDomain\tPhyla\tClass\tOrder\tFamily\tGenus\tSpecies",
-  "MAG1\td__Bacteria\tp__Bacillota_C\tc__Clostridia\to__Lachnospirales\tf__Lachnospiraceae\tg__Butyrivibrio\ts__Butyrivibrio sp1"
-), tsv)
+header <- paste(
+    "Strain", "Domain", "Phyla", "Class", "Order",
+    "Family", "Genus", "Species",
+    sep = "\t"
+)
+row1 <- paste(
+    "MAG1", "d__Bacteria", "p__Bacillota_C", "c__Clostridia",
+    "o__Lachnospirales", "f__Lachnospiraceae", "g__Butyrivibrio",
+    "s__Butyrivibrio sp1",
+    sep = "\t"
+)
+writeLines(c(header, row1), tsv)
 tax <- parse_gtdb_taxonomy(tsv)
 tax$Phyla
 

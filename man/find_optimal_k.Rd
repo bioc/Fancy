@@ -7,7 +7,7 @@
 find_optimal_k(
   data,
   k_values = c(2L, 3L, 4L, 5L, 6L, 7L, 8L, 10L, 15L, 18L, 20L),
-  cpus = 4L,
+  cpus = 1L,
   auto_select = TRUE
 )
 }

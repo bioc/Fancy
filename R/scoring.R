@@ -17,42 +17,44 @@
 #' @importFrom stats sd
 #' @keywords internal
 compute_edge_frequencies <- function(bootstrap_results, method) {
-  valid <- bootstrap_results[grepl(paste0("^", method, "_"),
-                                   names(bootstrap_results))]
-  n_bootstrap <- length(valid)
+    valid <- bootstrap_results[grepl(
+        paste0("^", method, "_"),
+        names(bootstrap_results)
+    )]
+    n_bootstrap <- length(valid)
 
-  all_edges <- do.call(rbind, valid)
-  all_edges <- .remove_directionality(all_edges)
+    all_edges <- do.call(rbind, valid)
+    all_edges <- .remove_directionality(all_edges)
 
-  all_edges$pair <- paste0(all_edges$source, ":::", all_edges$target)
+    all_edges$pair <- paste0(all_edges$source, ":::", all_edges$target)
 
-  if (method == "MRNET") {
-    pair_summary <- dplyr::group_by(all_edges, .data$pair)
-    pair_summary <- dplyr::summarise(
-      pair_summary,
-      freq  = dplyr::n() / n_bootstrap / 2,
-      mean  = mean(.data$weight),
-      sd    = stats::sd(.data$weight),
-      .groups = "drop"
+    if (method == "MRNET") {
+        pair_summary <- dplyr::group_by(all_edges, .data$pair)
+        pair_summary <- dplyr::summarise(
+            pair_summary,
+            freq = dplyr::n() / n_bootstrap / 2,
+            mean = mean(.data$weight),
+            sd = stats::sd(.data$weight),
+            .groups = "drop"
+        )
+    } else {
+        pair_summary <- dplyr::group_by(all_edges, .data$pair)
+        pair_summary <- dplyr::summarise(
+            pair_summary,
+            freq = 1,
+            mean = mean(.data$weight),
+            sd = stats::sd(.data$weight),
+            .groups = "drop"
+        )
+    }
+
+    pair_summary <- tidyr::separate(
+        pair_summary, "pair",
+        into = c("source", "target"),
+        sep = ":::"
     )
-  } else {
-    pair_summary <- dplyr::group_by(all_edges, .data$pair)
-    pair_summary <- dplyr::summarise(
-      pair_summary,
-      freq  = 1,
-      mean  = mean(.data$weight),
-      sd    = stats::sd(.data$weight),
-      .groups = "drop"
-    )
-  }
 
-  pair_summary <- tidyr::separate(
-    pair_summary, "pair",
-    into = c("source", "target"),
-    sep  = ":::"
-  )
-
-  pair_summary
+    pair_summary
 }
 
 # -------------------------------------------------------------------
@@ -81,65 +83,67 @@ compute_edge_frequencies <- function(bootstrap_results, method) {
 #' @keywords internal
 compute_hybrid_scores <- function(mrnet_freq, dcor_freq,
                                   return_unfiltered = FALSE) {
-  hybrid <- dplyr::full_join(
-    mrnet_freq, dcor_freq,
-    by = c("source", "target"),
-    relationship = "many-to-many"
-  )
-
-  hybrid <- dplyr::mutate(
-    hybrid,
-    EdgeFrequency = dplyr::if_else(is.na(.data$freq.x), 0, .data$freq.x),
-    mean.dcor     = dplyr::if_else(is.na(.data$mean.y), 0, .data$mean.y),
-    sd.dcor       = dplyr::if_else(is.na(.data$sd.y),   1, .data$sd.y),
-    Stability.dcor = dplyr::if_else(
-      is.infinite(.data$mean.dcor / .data$sd.dcor),
-      .data$mean.dcor / 0.001,
-      .data$mean.dcor / .data$sd.dcor
+    hybrid <- dplyr::full_join(
+        mrnet_freq, dcor_freq,
+        by = c("source", "target"),
+        relationship = "many-to-many"
     )
-  )
 
-  # Robust scaling to [0, 1]
-  q20 <- as.numeric(stats::quantile(hybrid$Stability.dcor, 0.20))
-  q99 <- as.numeric(stats::quantile(hybrid$Stability.dcor, 0.99))
+    hybrid <- dplyr::mutate(
+        hybrid,
+        EdgeFrequency = dplyr::if_else(is.na(.data$freq.x), 0, .data$freq.x),
+        mean.dcor = dplyr::if_else(is.na(.data$mean.y), 0, .data$mean.y),
+        sd.dcor = dplyr::if_else(is.na(.data$sd.y), 1, .data$sd.y),
+        Stability.dcor = dplyr::if_else(
+            is.infinite(.data$mean.dcor / .data$sd.dcor),
+            .data$mean.dcor / 0.001,
+            .data$mean.dcor / .data$sd.dcor
+        )
+    )
 
-  hybrid <- dplyr::mutate(
-    hybrid,
-    Stability.dcor.scaled = pmin(1, pmax(0,
-      (.data$Stability.dcor - q20) / (q99 - q20)))
-  )
+    # Robust scaling to [0, 1]
+    q20 <- as.numeric(stats::quantile(hybrid$Stability.dcor, 0.20))
+    q99 <- as.numeric(stats::quantile(hybrid$Stability.dcor, 0.99))
 
-  # Drop intermediate join columns before filtering
-  hybrid <- dplyr::mutate(
-    hybrid,
-    freq.x = NULL, freq.y = NULL,
-    mean.x = NULL, sd.x   = NULL,
-    mean.y = NULL, sd.y   = NULL
-  )
+    hybrid <- dplyr::mutate(
+        hybrid,
+        Stability.dcor.scaled = pmin(1, pmax(
+            0,
+            (.data$Stability.dcor - q20) / (q99 - q20)
+        ))
+    )
 
-  # Save unfiltered snapshot
-  if (return_unfiltered) {
-    unfiltered <- hybrid
-  }
+    # Drop intermediate join columns before filtering
+    hybrid <- dplyr::mutate(
+        hybrid,
+        freq.x = NULL, freq.y = NULL,
+        mean.x = NULL, sd.x   = NULL,
+        mean.y = NULL, sd.y   = NULL
+    )
 
-  # Filtering
-  dcor_cut <- as.numeric(
-    stats::quantile(hybrid$Stability.dcor, 0.8)
-  )
+    # Save unfiltered snapshot
+    if (return_unfiltered) {
+        unfiltered <- hybrid
+    }
 
-  hybrid <- dplyr::filter(
-    hybrid,
-    .data$EdgeFrequency > 0.6 |
-      (.data$EdgeFrequency >= 0.3 &
-       .data$EdgeFrequency <= 0.6 &
-       .data$Stability.dcor > dcor_cut)
-  )
+    # Filtering
+    dcor_cut <- as.numeric(
+        stats::quantile(hybrid$Stability.dcor, 0.8)
+    )
 
-  if (return_unfiltered) {
-    attr(hybrid, "unfiltered") <- unfiltered
-  }
+    hybrid <- dplyr::filter(
+        hybrid,
+        .data$EdgeFrequency > 0.6 |
+            (.data$EdgeFrequency >= 0.3 &
+                .data$EdgeFrequency <= 0.6 &
+                .data$Stability.dcor > dcor_cut)
+    )
 
-  hybrid
+    if (return_unfiltered) {
+        attr(hybrid, "unfiltered") <- unfiltered
+    }
+
+    hybrid
 }
 
 # -------------------------------------------------------------------
@@ -188,49 +192,49 @@ compute_hybrid_scores <- function(mrnet_freq, dcor_freq,
 #'
 #' @examples
 #' edges <- data.frame(
-#'   source = c("MAG1", "MAG2", "MAG3"),
-#'   target = c("MAG2", "MAG3", "MAG4"),
-#'   EdgeFrequency = c(0.8, 0.5, 0.9),
-#'   Stability.dcor.scaled = c(0.7, 0.3, 0.85)
+#'     source = c("MAG1", "MAG2", "MAG3"),
+#'     target = c("MAG2", "MAG3", "MAG4"),
+#'     EdgeFrequency = c(0.8, 0.5, 0.9),
+#'     Stability.dcor.scaled = c(0.7, 0.3, 0.85)
 #' )
 #' scored <- hybrid_score(edges, w1 = 0.3, w2 = 0.7)
 #' scored$HybridScore
 #'
 #' @importFrom stats quantile
 hybrid_score <- function(
-    edge_metrics,
-    w1 = 0.3,
-    w2 = 0.7,
-    score_type = "multiplicative",
-    dcor_rescue_percentile = NULL
+  edge_metrics,
+  w1 = 0.3,
+  w2 = 0.7,
+  score_type = "multiplicative",
+  dcor_rescue_percentile = NULL
 ) {
-  score_type <- match.arg(score_type, c("multiplicative", "additive"))
+    score_type <- match.arg(score_type, c("multiplicative", "additive"))
 
-  ef   <- edge_metrics$EdgeFrequency
-  stab <- edge_metrics$Stability.dcor.scaled
+    ef <- edge_metrics$EdgeFrequency
+    stab <- edge_metrics$Stability.dcor.scaled
 
-  if (score_type == "additive") {
-    edge_metrics$HybridScore <- w1 * ef + w2 * stab
-  } else {
-    # dCor rescue: floor EdgeFrequency for high-stability edges
-    if (!is.null(dcor_rescue_percentile)) {
-      stab_thresh <- as.numeric(
-        stats::quantile(stab, dcor_rescue_percentile, na.rm = TRUE)
-      )
-      nonzero_ef <- ef[ef > 0]
-      ef_floor <- if (length(nonzero_ef) > 0) {
-        as.numeric(stats::quantile(nonzero_ef, 0.3, na.rm = TRUE))
-      } else {
-        0.3
-      }
-      rescue <- stab >= stab_thresh & ef < ef_floor
-      ef[rescue] <- ef_floor
+    if (score_type == "additive") {
+        edge_metrics$HybridScore <- w1 * ef + w2 * stab
+    } else {
+        # dCor rescue: floor EdgeFrequency for high-stability edges
+        if (!is.null(dcor_rescue_percentile)) {
+            stab_thresh <- as.numeric(
+                stats::quantile(stab, dcor_rescue_percentile, na.rm = TRUE)
+            )
+            nonzero_ef <- ef[ef > 0]
+            ef_floor <- if (length(nonzero_ef) > 0) {
+                as.numeric(stats::quantile(nonzero_ef, 0.3, na.rm = TRUE))
+            } else {
+                0.3
+            }
+            rescue <- stab >= stab_thresh & ef < ef_floor
+            ef[rescue] <- ef_floor
+        }
+
+        edge_metrics$HybridScore <- (ef^w1) * (stab^w2)
     }
 
-    edge_metrics$HybridScore <- (ef ^ w1) * (stab ^ w2)
-  }
-
-  edge_metrics
+    edge_metrics
 }
 
 # -------------------------------------------------------------------
@@ -257,36 +261,36 @@ hybrid_score <- function(
 #'
 #' @examples
 #' scored <- data.frame(
-#'   source = paste0("MAG", 1:10),
-#'   target = paste0("MAG", 11:20),
-#'   HybridScore = seq(0.1, 1.0, by = 0.1)
+#'     source = paste0("MAG", 1:10),
+#'     target = paste0("MAG", 11:20),
+#'     HybridScore = seq(0.1, 1.0, by = 0.1)
 #' )
 #' top5 <- threshold_edges(scored, method = "top_n", value = 5)
 #' nrow(top5)
 #'
 #' @importFrom stats quantile
 threshold_edges <- function(
-    scored_edges,
-    method = "quantile",
-    value = 0.7
+  scored_edges,
+  method = "quantile",
+  value = 0.7
 ) {
-  method <- match.arg(method, c("quantile", "score", "top_n"))
+    method <- match.arg(method, c("quantile", "score", "top_n"))
 
-  if (method == "quantile") {
-    cutoff <- as.numeric(
-      stats::quantile(scored_edges$HybridScore, probs = value, na.rm = TRUE)
-    )
-    out <- scored_edges[scored_edges$HybridScore >= cutoff, ]
-  } else if (method == "score") {
-    out <- scored_edges[scored_edges$HybridScore >= value, ]
-  } else {
-    # top_n
-    value <- as.integer(value)
-    ord <- order(scored_edges$HybridScore, decreasing = TRUE)
-    out <- scored_edges[ord[seq_len(min(value, nrow(scored_edges)))], ]
-  }
+    if (method == "quantile") {
+        cutoff <- as.numeric(
+            stats::quantile(scored_edges$HybridScore, probs = value, na.rm = TRUE)
+        )
+        out <- scored_edges[scored_edges$HybridScore >= cutoff, ]
+    } else if (method == "score") {
+        out <- scored_edges[scored_edges$HybridScore >= value, ]
+    } else {
+        # top_n
+        value <- as.integer(value)
+        ord <- order(scored_edges$HybridScore, decreasing = TRUE)
+        out <- scored_edges[ord[seq_len(min(value, nrow(scored_edges)))], ]
+    }
 
-  out <- out[order(out$HybridScore, decreasing = TRUE), ]
-  rownames(out) <- NULL
-  out
+    out <- out[order(out$HybridScore, decreasing = TRUE), ]
+    rownames(out) <- NULL
+    out
 }

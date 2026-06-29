@@ -10,14 +10,14 @@
 #'
 #' @keywords internal
 .remove_directionality <- function(df) {
-  df$source <- as.character(df$source)
-  df$target <- as.character(df$target)
+    df$source <- as.character(df$source)
+    df$target <- as.character(df$target)
 
-  idx <- df$source > df$target
+    idx <- df$source > df$target
 
-  tmp <- df$source[idx]
-  df$source[idx] <- df$target[idx]
-  df$target[idx] <- tmp
+    tmp <- df$source[idx]
+    df$source[idx] <- df$target[idx]
+    df$target[idx] <- tmp
 
-  df
+    df
 }

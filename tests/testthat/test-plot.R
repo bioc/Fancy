@@ -20,22 +20,19 @@ test_that("plot_network runs end-to-end on a fancy result", {
     expect_true(file.exists(tmp))
 })
 
-test_that("plot.fancy method dispatches and draws a histogram", {
+test_that("plot() method dispatches on FancyResult and draws a histogram", {
     edges <- data.frame(
         source = paste0("M", seq_len(20)),
         target = paste0("N", seq_len(20)),
         HybridScore = seq(0.05, 1.0, length.out = 20)
     )
-    fake_result <- structure(
-        list(
-            edges = edges, all_edges = edges,
-            k = 5L, n_bootstrap = 2L,
-            params = list(
-                threshold_method = "quantile",
-                threshold_value = 0.7
-            )
-        ),
-        class = "fancy"
+    fake_result <- methods::new("FancyResult",
+        edges = edges, all_edges = edges,
+        k = 5, n_bootstrap = 2L,
+        params = list(
+            threshold_method = "quantile",
+            threshold_value = 0.7
+        )
     )
 
     tmp <- tempfile(fileext = ".png")

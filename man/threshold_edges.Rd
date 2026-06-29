@@ -29,9 +29,9 @@ percent.}
 }
 \examples{
 scored <- data.frame(
-  source = paste0("MAG", 1:10),
-  target = paste0("MAG", 11:20),
-  HybridScore = seq(0.1, 1.0, by = 0.1)
+    source = paste0("MAG", 1:10),
+    target = paste0("MAG", 11:20),
+    HybridScore = seq(0.1, 1.0, by = 0.1)
 )
 top5 <- threshold_edges(scored, method = "top_n", value = 5)
 nrow(top5)

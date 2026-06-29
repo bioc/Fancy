@@ -32,24 +32,24 @@
 #'
 #' @importFrom dplyr mutate across
 filter_mags <- function(
-    count_table,
-    coverage_table,
-    min_coverage = 0.3,
-    min_samples = 50L
+  count_table,
+  coverage_table,
+  min_coverage = 0.3,
+  min_samples = 50L
 ) {
-  # Step 1: coverage masking — binarise, then multiply with counts
-  mask <- as.data.frame(
-    lapply(coverage_table, function(col) ifelse(col > min_coverage, 1, 0))
-  )
-  masked_counts <- as.data.frame(
-    mapply(`*`, mask, count_table, SIMPLIFY = FALSE)
-  )
-  rownames(masked_counts) <- rownames(count_table)
+    # Step 1: coverage masking — binarise, then multiply with counts
+    mask <- as.data.frame(
+        lapply(coverage_table, function(col) ifelse(col > min_coverage, 1, 0))
+    )
+    masked_counts <- as.data.frame(
+        mapply(`*`, mask, count_table, SIMPLIFY = FALSE)
+    )
+    rownames(masked_counts) <- rownames(count_table)
 
-  # Step 2: prevalence filter — keep MAGs present in >= min_samples samples
-  row_presence <- rowSums(mask)
-  keep <- row_presence >= min_samples
-  masked_counts[keep, , drop = FALSE]
+    # Step 2: prevalence filter — keep MAGs present in >= min_samples samples
+    row_presence <- rowSums(mask)
+    keep <- row_presence >= min_samples
+    masked_counts[keep, , drop = FALSE]
 }
 
 # -------------------------------------------------------------------
@@ -80,9 +80,9 @@ filter_mags <- function(
 #'
 #' @importFrom compositions clr
 clr_normalize <- function(count_table, pseudocount = 1) {
-  mat <- as.matrix(count_table) + pseudocount
-  clr_mat <- compositions::clr(mat)
-  out <- as.data.frame(unclass(clr_mat))
-  rownames(out) <- rownames(count_table)
-  out
+    mat <- as.matrix(count_table) + pseudocount
+    clr_mat <- compositions::clr(mat)
+    out <- as.data.frame(unclass(clr_mat))
+    rownames(out) <- rownames(count_table)
+    out
 }

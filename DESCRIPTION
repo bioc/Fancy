@@ -1,7 +1,7 @@
 Package: Fancy
 Type: Package
 Title: Frequency and Nonlinear Correlation Hybrid Network Inference
-Version: 0.99.3
+Version: 0.99.4
 Authors@R: person(
     given = "Wanxin",
     family = "Lai",
@@ -28,6 +28,7 @@ Imports:
     energy,
     knnmi,
     snowfall,
+    methods,
     dplyr,
     tidyr,
     purrr,

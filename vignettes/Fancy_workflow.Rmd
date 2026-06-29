@@ -18,9 +18,9 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment  = "#>",
-  crop     = if (requireNamespace("magick", quietly = TRUE)) "magick" else NULL
+    collapse = TRUE,
+    comment  = "#>",
+    crop     = if (requireNamespace("magick", quietly = TRUE)) "magick" else NULL
 )
 ```
 
@@ -121,7 +121,7 @@ data(fancy_tiny_coverage)
 data(fancy_tiny_taxonomy)
 data(fancy_tiny_metadata)
 
-dim(fancy_tiny_clr)    # MAGs x samples (CLR-transformed)
+dim(fancy_tiny_clr) # MAGs x samples (CLR-transformed)
 fancy_tiny_clr[1:5, 1:5]
 ```
 
@@ -130,9 +130,11 @@ The taxonomy spans 9 phyla:
 ```{r phyla-barplot, fig.width=7, fig.height=4}
 phyla_counts <- sort(table(fancy_tiny_taxonomy$Phyla), decreasing = TRUE)
 par(mar = c(5, 10, 2, 1))
-barplot(phyla_counts, horiz = TRUE, las = 1,
-        col = phyla_palette(names(phyla_counts))[names(phyla_counts)],
-        xlab = "Number of MAGs", main = "Phyla Distribution")
+barplot(phyla_counts,
+    horiz = TRUE, las = 1,
+    col = phyla_palette(names(phyla_counts))[names(phyla_counts)],
+    xlab = "Number of MAGs", main = "Phyla Distribution"
+)
 ```
 
 ## Coverage distribution
@@ -143,11 +145,14 @@ subset have high coverage, as they were selected for genome quality
 
 ```{r coverage-hist, fig.width=7, fig.height=4}
 cov_vals <- unlist(fancy_tiny_coverage)
-hist(cov_vals, breaks = 60, main = "Genome Coverage Distribution",
-     xlab = "Covered fraction", col = "steelblue", border = "white")
+hist(cov_vals,
+    breaks = 60, main = "Genome Coverage Distribution",
+    xlab = "Covered fraction", col = "steelblue", border = "white"
+)
 abline(v = 0.3, col = "red", lwd = 2, lty = 2)
 text(0.32, par("usr")[4] * 0.85, "min_coverage = 0.3",
-     col = "red", cex = 0.8, pos = 4)
+    col = "red", cex = 0.8, pos = 4
+)
 cat("Fraction with coverage >= 0.3:", round(mean(cov_vals >= 0.3, na.rm = TRUE), 4), "\n")
 ```
 
@@ -158,8 +163,10 @@ breed.
 
 ```{r metadata, fig.width=7, fig.height=4}
 head(fancy_tiny_metadata)
-hist(fancy_tiny_metadata$CH4, breaks = 15, main = "CH4 Emissions",
-     xlab = "CH4 (g/day)", col = "grey80", border = "white")
+hist(fancy_tiny_metadata$CH4,
+    breaks = 15, main = "CH4 Emissions",
+    xlab = "CH4 (g/day)", col = "grey80", border = "white"
+)
 ```
 
 # Preparing the Network Input
@@ -171,7 +178,7 @@ so we transpose:
 
 ```{r transpose}
 net_input <- t(fancy_tiny_clr)
-dim(net_input)  # samples x MAGs
+dim(net_input) # samples x MAGs
 net_input[1:5, 1:5]
 ```
 
@@ -260,15 +267,15 @@ contribute equally to the hybrid score.
 
 ```{r run-fancy, message=FALSE}
 result <- fancy(
-  net_input,
-  n_bootstrap     = 100L,
-  k               = 3L,
-  cpus            = 6L,
-  w1              = 0.5,
-  w2              = 0.5,
-  threshold_method = "quantile",
-  threshold_value  = 0.7,
-  verbose          = TRUE
+    net_input,
+    n_bootstrap = 100L,
+    k = 3L,
+    cpus = 6L,
+    w1 = 0.5,
+    w2 = 0.5,
+    threshold_method = "quantile",
+    threshold_value = 0.7,
+    verbose = TRUE
 )
 ```
 
@@ -305,17 +312,19 @@ This is useful for inspecting known nonlinear pairs:
 ## Known nonlinear pairs (MAGs 1-4)
 pairs <- list(c("MAG_001", "MAG_002"), c("MAG_003", "MAG_004"))
 diag_rows <- lapply(pairs, function(p) {
-  uf <- result$all_edges_unfiltered
-  idx <- which((uf$source == p[1] & uf$target == p[2]) |
-               (uf$source == p[2] & uf$target == p[1]))
-  if (length(idx)) as.data.frame(uf[idx[1], ])
+    uf <- result$all_edges_unfiltered
+    idx <- which((uf$source == p[1] & uf$target == p[2]) |
+        (uf$source == p[2] & uf$target == p[1]))
+    if (length(idx)) as.data.frame(uf[idx[1], ])
 })
 diag_df <- do.call(rbind, diag_rows)
 knitr::kable(
-  diag_df[, c("source", "target", "EdgeFrequency", "mean.dcor", "sd.dcor",
-              "Stability.dcor", "Stability.dcor.scaled", "HybridScore")],
-  digits = 3, row.names = FALSE,
-  caption = "Intermediate metrics for known nonlinear MAG pairs"
+    diag_df[, c(
+        "source", "target", "EdgeFrequency", "mean.dcor", "sd.dcor",
+        "Stability.dcor", "Stability.dcor.scaled", "HybridScore"
+    )],
+    digits = 3, row.names = FALSE,
+    caption = "Intermediate metrics for known nonlinear MAG pairs"
 )
 ```
 
@@ -329,18 +338,18 @@ but remains visible here.
 ```{r helper-functions, include=FALSE}
 ## Helper: look up hybrid score for a MAG pair
 get_hybrid_score <- function(all_edges, mag1, mag2) {
-  idx <- which(
-    (all_edges$source == mag1 & all_edges$target == mag2) |
-    (all_edges$source == mag2 & all_edges$target == mag1)
-  )
-  if (length(idx) > 0) round(all_edges$HybridScore[idx[1]], 3) else NA
+    idx <- which(
+        (all_edges$source == mag1 & all_edges$target == mag2) |
+            (all_edges$source == mag2 & all_edges$target == mag1)
+    )
+    if (length(idx) > 0) round(all_edges$HybridScore[idx[1]], 3) else NA
 }
 
 ## CH4 colour mapping
-ch4_vals  <- fancy_tiny_metadata$CH4
-ch4_pal   <- colorRampPalette(c("dodgerblue", "gold", "firebrick"))(100)
-ch4_idx   <- as.integer(cut(ch4_vals, breaks = 100))
-ch4_cols  <- ch4_pal[ch4_idx]
+ch4_vals <- fancy_tiny_metadata$CH4
+ch4_pal <- colorRampPalette(c("dodgerblue", "gold", "firebrick"))(100)
+ch4_idx <- as.integer(cut(ch4_vals, breaks = 100))
+ch4_cols <- ch4_pal[ch4_idx]
 ```
 
 # Edges Across Hybrid Score Bands
@@ -355,95 +364,106 @@ all_scored <- result$all_edges[order(-result$all_edges$HybridScore), ]
 
 ## Define five score bands and sample 2 pairs from each
 bands <- list(
-  c(0.9, Inf),
-  c(0.6, 0.7),
-  c(0.45, 0.55),
-  c(0.3, 0.4),
-  c(0.1, 0.2)
+    c(0.9, Inf),
+    c(0.6, 0.7),
+    c(0.45, 0.55),
+    c(0.3, 0.4),
+    c(0.1, 0.2)
 )
 band_labels <- c("~1.0", "0.6-0.7", "0.45-0.55", "0.3-0.4", "0.1-0.2")
 
 set.seed(42)
 show_pairs <- data.frame()
 for (b in seq_along(bands)) {
-  lo <- bands[[b]][1]
-  hi <- bands[[b]][2]
-  in_band <- all_scored[all_scored$HybridScore >= lo &
-                        all_scored$HybridScore < hi, ]
-  if (nrow(in_band) == 0) {
-    ## If exact band is empty, take the 2 closest edges to midpoint
-    mid <- (lo + hi) / 2
-    all_scored$dist_tmp <- abs(all_scored$HybridScore - mid)
-    in_band <- head(all_scored[order(all_scored$dist_tmp), ], 2)
-    all_scored$dist_tmp <- NULL
-  }
-
-  ## For mid bands (0.3-0.55): prefer low sd.dcor + weak Pearson r
-  ## For lowest band (0.1-0.2): prefer higher Pearson r to show that
-  ## linearly correlated pairs correctly receive low hybrid scores
-  if ((hi <= 0.55 && lo >= 0.3) && nrow(in_band) > 2) {
-    in_band$abs_r <- vapply(seq_len(nrow(in_band)), function(j) {
-      abs(cor(net_input[, in_band$source[j]],
-              net_input[, in_band$target[j]]))
-    }, numeric(1))
-    low_r <- in_band[in_band$abs_r < 0.4, ]
-    if (nrow(low_r) >= 2) {
-      low_r <- low_r[order(low_r$sd.dcor), ]
-      picked <- head(low_r, 2)
-    } else {
-      in_band <- in_band[order(in_band$sd.dcor), ]
-      picked <- head(in_band, 2)
+    lo <- bands[[b]][1]
+    hi <- bands[[b]][2]
+    in_band <- all_scored[all_scored$HybridScore >= lo &
+        all_scored$HybridScore < hi, ]
+    if (nrow(in_band) == 0) {
+        ## If exact band is empty, take the 2 closest edges to midpoint
+        mid <- (lo + hi) / 2
+        all_scored$dist_tmp <- abs(all_scored$HybridScore - mid)
+        in_band <- head(all_scored[order(all_scored$dist_tmp), ], 2)
+        all_scored$dist_tmp <- NULL
     }
-    picked$abs_r <- NULL
-  } else if (lo < 0.3 && nrow(in_band) > 2) {
-    in_band$abs_r <- vapply(seq_len(nrow(in_band)), function(j) {
-      abs(cor(net_input[, in_band$source[j]],
-              net_input[, in_band$target[j]]))
-    }, numeric(1))
-    ## Pick one pair with |r| > 0.5, one with |r| > 0.4
-    high_r <- in_band[order(-in_band$abs_r), ]
-    picked <- head(high_r[high_r$abs_r > 0.4, ], 2)
-    if (nrow(picked) < 2) picked <- head(high_r, 2)
-    picked$abs_r <- NULL
-  } else {
-    n_pick <- min(2, nrow(in_band))
-    picked <- in_band[sample(seq_len(nrow(in_band)), n_pick), ]
-  }
 
-  picked$band <- band_labels[b]
-  show_pairs <- rbind(show_pairs, picked)
+    ## For mid bands (0.3-0.55): prefer low sd.dcor + weak Pearson r
+    ## For lowest band (0.1-0.2): prefer higher Pearson r to show that
+    ## linearly correlated pairs correctly receive low hybrid scores
+    if ((hi <= 0.55 && lo >= 0.3) && nrow(in_band) > 2) {
+        in_band$abs_r <- vapply(seq_len(nrow(in_band)), function(j) {
+            abs(cor(
+                net_input[, in_band$source[j]],
+                net_input[, in_band$target[j]]
+            ))
+        }, numeric(1))
+        low_r <- in_band[in_band$abs_r < 0.4, ]
+        if (nrow(low_r) >= 2) {
+            low_r <- low_r[order(low_r$sd.dcor), ]
+            picked <- head(low_r, 2)
+        } else {
+            in_band <- in_band[order(in_band$sd.dcor), ]
+            picked <- head(in_band, 2)
+        }
+        picked$abs_r <- NULL
+    } else if (lo < 0.3 && nrow(in_band) > 2) {
+        in_band$abs_r <- vapply(seq_len(nrow(in_band)), function(j) {
+            abs(cor(
+                net_input[, in_band$source[j]],
+                net_input[, in_band$target[j]]
+            ))
+        }, numeric(1))
+        ## Pick one pair with |r| > 0.5, one with |r| > 0.4
+        high_r <- in_band[order(-in_band$abs_r), ]
+        picked <- head(high_r[high_r$abs_r > 0.4, ], 2)
+        if (nrow(picked) < 2) picked <- head(high_r, 2)
+        picked$abs_r <- NULL
+    } else {
+        n_pick <- min(2, nrow(in_band))
+        picked <- in_band[sample(seq_len(nrow(in_band)), n_pick), ]
+    }
+
+    picked$band <- band_labels[b]
+    show_pairs <- rbind(show_pairs, picked)
 }
 
 par(mfrow = c(5, 2), mar = c(4, 4.5, 3, 1))
 for (i in seq_len(nrow(show_pairs))) {
-  s <- show_pairs$source[i]
-  t <- show_pairs$target[i]
-  hs <- round(show_pairs$HybridScore[i], 3)
-  band <- show_pairs$band[i]
+    s <- show_pairs$source[i]
+    t <- show_pairs$target[i]
+    hs <- round(show_pairs$HybridScore[i], 3)
+    band <- show_pairs$band[i]
 
-  s_genus <- fancy_tiny_taxonomy[s, "Genus"]
-  t_genus <- fancy_tiny_taxonomy[t, "Genus"]
+    s_genus <- fancy_tiny_taxonomy[s, "Genus"]
+    t_genus <- fancy_tiny_taxonomy[t, "Genus"]
 
-  xi <- net_input[, t]
-  yi <- net_input[, s]
-  cti <- cor.test(xi, yi)
+    xi <- net_input[, t]
+    yi <- net_input[, s]
+    cti <- cor.test(xi, yi)
 
-  plot(xi, yi,
-       xlab = paste0(t_genus, " (CLR)"),
-       ylab = paste0(s_genus, " (CLR)"),
-       main = paste0("Score ", band, ": ", s_genus, " vs ", t_genus),
-       pch = 19, col = adjustcolor(ch4_cols, 0.7), cex = 1.1)
-  legend("topright", bty = "n", cex = 0.9,
-         legend = c(
-           paste0("Hybrid = ", hs),
-           paste0("r = ", round(cti$estimate, 3),
-                  " (p = ", format.pval(cti$p.value, digits = 2), ")")
-         ))
-  if (i == 1) {
-    legend("bottomleft", bty = "n", cex = 0.8, title = "CH4",
-           legend = c("Low", "Mid", "High"),
-           pch = 19, col = c("dodgerblue", "gold", "firebrick"))
-  }
+    plot(xi, yi,
+        xlab = paste0(t_genus, " (CLR)"),
+        ylab = paste0(s_genus, " (CLR)"),
+        main = paste0("Score ", band, ": ", s_genus, " vs ", t_genus),
+        pch = 19, col = adjustcolor(ch4_cols, 0.7), cex = 1.1
+    )
+    legend("topright",
+        bty = "n", cex = 0.9,
+        legend = c(
+            paste0("Hybrid = ", hs),
+            paste0(
+                "r = ", round(cti$estimate, 3),
+                " (p = ", format.pval(cti$p.value, digits = 2), ")"
+            )
+        )
+    )
+    if (i == 1) {
+        legend("bottomleft",
+            bty = "n", cex = 0.8, title = "CH4",
+            legend = c("Low", "Mid", "High"),
+            pch = 19, col = c("dodgerblue", "gold", "firebrick")
+        )
+    }
 }
 ```
 
@@ -467,24 +487,31 @@ hs1 <- get_hybrid_score(result$all_edges_unfiltered, "MAG_001", "MAG_002")
 
 par(mar = c(4.5, 4.5, 3.5, 1))
 plot(x1, y1,
-     xlab = "AC2028 (CLR)",
-     ylab = "Bulleidia (CLR)",
-     main = "MAG_001 vs MAG_002\nThreshold Competitive Exclusion",
-     cex.main = 0.85, cex.axis = 0.75, cex.lab = 0.85,
-     pch = 19, col = adjustcolor(ch4_cols, 0.8), cex = 0.9)
+    xlab = "AC2028 (CLR)",
+    ylab = "Bulleidia (CLR)",
+    main = "MAG_001 vs MAG_002\nThreshold Competitive Exclusion",
+    cex.main = 0.85, cex.axis = 0.75, cex.lab = 0.85,
+    pch = 19, col = adjustcolor(ch4_cols, 0.8), cex = 0.9
+)
 lo <- loess(y1 ~ x1, span = 0.75)
 ox <- order(x1)
 lines(x1[ox], predict(lo)[ox], col = "black", lwd = 2.5)
 
-legend("topright", bty = "n", cex = 0.75,
-       legend = c(
-         paste0("Pearson r = ", round(ct1$estimate, 3),
-                " (p = ", format.pval(ct1$p.value, digits = 2), ")"),
-         paste0("Hybrid score = ", hs1)
-       ))
-legend("bottomleft", bty = "n", cex = 0.7, title = "CH4 (g/day)",
-       legend = c("Low", "Mid", "High"),
-       pch = 19, col = c("dodgerblue", "gold", "firebrick"))
+legend("topright",
+    bty = "n", cex = 0.75,
+    legend = c(
+        paste0(
+            "Pearson r = ", round(ct1$estimate, 3),
+            " (p = ", format.pval(ct1$p.value, digits = 2), ")"
+        ),
+        paste0("Hybrid score = ", hs1)
+    )
+)
+legend("bottomleft",
+    bty = "n", cex = 0.7, title = "CH4 (g/day)",
+    legend = c("Low", "Mid", "High"),
+    pch = 19, col = c("dodgerblue", "gold", "firebrick")
+)
 ```
 
 ```{r scatter-pair2, fig.width=4, fig.height=3.5}
@@ -496,21 +523,28 @@ hs2 <- get_hybrid_score(result$all_edges_unfiltered, "MAG_003", "MAG_004")
 
 par(mar = c(4.5, 4.5, 3.5, 1))
 plot(x2, y2,
-     xlab = "Cryptobacteroides (CLR)",
-     ylab = "RUG023 (CLR)",
-     main = "MAG_003 vs MAG_004\nL-Shaped Nonlinear Relationship",
-     cex.main = 0.85, cex.axis = 0.75, cex.lab = 0.85,
-     pch = 19, col = adjustcolor(ch4_cols, 0.8), cex = 0.9)
+    xlab = "Cryptobacteroides (CLR)",
+    ylab = "RUG023 (CLR)",
+    main = "MAG_003 vs MAG_004\nL-Shaped Nonlinear Relationship",
+    cex.main = 0.85, cex.axis = 0.75, cex.lab = 0.85,
+    pch = 19, col = adjustcolor(ch4_cols, 0.8), cex = 0.9
+)
 
-legend("topright", bty = "n", cex = 0.75,
-       legend = c(
-         paste0("Pearson r = ", round(ct2$estimate, 3),
-                " (p = ", format.pval(ct2$p.value, digits = 2), ")"),
-         paste0("Hybrid score = ", hs2)
-       ))
-legend("bottomleft", bty = "n", cex = 0.7, title = "CH4 (g/day)",
-       legend = c("Low", "Mid", "High"),
-       pch = 19, col = c("dodgerblue", "gold", "firebrick"))
+legend("topright",
+    bty = "n", cex = 0.75,
+    legend = c(
+        paste0(
+            "Pearson r = ", round(ct2$estimate, 3),
+            " (p = ", format.pval(ct2$p.value, digits = 2), ")"
+        ),
+        paste0("Hybrid score = ", hs2)
+    )
+)
+legend("bottomleft",
+    bty = "n", cex = 0.7, title = "CH4 (g/day)",
+    legend = c("Low", "Mid", "High"),
+    pch = 19, col = c("dodgerblue", "gold", "firebrick")
+)
 ```
 
 Both interactions have weak Pearson correlations, yet the underlying
@@ -562,19 +596,25 @@ edges <- result$edges
 
 # Add source taxonomy
 edges <- merge(edges, fancy_tiny_taxonomy[, c("Genus", "Phyla")],
-               by.x = "source", by.y = "row.names", all.x = TRUE)
+    by.x = "source", by.y = "row.names", all.x = TRUE
+)
 names(edges)[names(edges) == "Genus"] <- "source_Genus"
 names(edges)[names(edges) == "Phyla"] <- "source_Phyla"
 
 # Add target taxonomy
 edges <- merge(edges, fancy_tiny_taxonomy[, c("Genus", "Phyla")],
-               by.x = "target", by.y = "row.names", all.x = TRUE)
+    by.x = "target", by.y = "row.names", all.x = TRUE
+)
 names(edges)[names(edges) == "Genus"] <- "target_Genus"
 names(edges)[names(edges) == "Phyla"] <- "target_Phyla"
 
-head(edges[order(-edges$HybridScore),
-     c("source_Genus", "target_Genus", "source_Phyla", "target_Phyla",
-       "HybridScore")], 15)
+head(edges[
+    order(-edges$HybridScore),
+    c(
+        "source_Genus", "target_Genus", "source_Phyla", "target_Phyla",
+        "HybridScore"
+    )
+], 15)
 ```
 
 # Network Visualization
@@ -603,9 +643,9 @@ that Cytoscape can import directly.
 
 ```{r export-build, eval=TRUE}
 cyto <- export_cytoscape(
-  result,
-  fancy_tiny_taxonomy,
-  file_prefix = tempfile("fancy")
+    result,
+    fancy_tiny_taxonomy,
+    file_prefix = tempfile("fancy")
 )
 ```
 
@@ -639,10 +679,11 @@ re-running the bootstrap:
 
 ```{r save-objects, eval=FALSE}
 save(result, net_input,
-     fancy_tiny_clr, fancy_tiny_counts, fancy_tiny_coverage,
-     fancy_tiny_taxonomy, fancy_tiny_metadata,
-     all_scored, show_pairs, diag_df, edges, top5, strict,
-     file = "vignette_objects.RData")
+    fancy_tiny_clr, fancy_tiny_counts, fancy_tiny_coverage,
+    fancy_tiny_taxonomy, fancy_tiny_metadata,
+    all_scored, show_pairs, diag_df, edges, top5, strict,
+    file = "vignette_objects.RData"
+)
 ```
 
 # Session Info

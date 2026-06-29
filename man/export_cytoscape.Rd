@@ -12,7 +12,7 @@ export_cytoscape(
 )
 }
 \arguments{
-\item{fancy_result}{An object of class \code{"fancy"} as returned by
+\item{fancy_result}{A \linkS4class{FancyResult} object as returned by
 \code{\link[=fancy]{fancy()}}.}
 
 \item{taxonomy}{A data.frame with MAG IDs as row names and at least a
@@ -37,18 +37,19 @@ into Cytoscape. The node table includes taxonomy columns and a hex
 colour derived from \code{\link[=phyla_palette]{phyla_palette()}}.
 }
 \examples{
-mock <- structure(list(
-  edges = data.frame(
-    source = c("MAG1", "MAG2"), target = c("MAG2", "MAG3"),
-    HybridScore = c(0.9, 0.7)
-  )
-), class = "fancy")
+mock <- methods::new("FancyResult",
+    edges = data.frame(
+        source = c("MAG1", "MAG2"), target = c("MAG2", "MAG3"),
+        HybridScore = c(0.9, 0.7)
+    )
+)
 tax <- data.frame(
-  Phyla = c("Bacillota", "Pseudomonadota", "Bacteroidota"),
-  Genus = c("Genus_A", "Genus_B", "Genus_C"),
-  row.names = c("MAG1", "MAG2", "MAG3")
+    Phyla = c("Bacillota", "Pseudomonadota", "Bacteroidota"),
+    Genus = c("Genus_A", "Genus_B", "Genus_C"),
+    row.names = c("MAG1", "MAG2", "MAG3")
 )
 out <- export_cytoscape(mock, tax,
-                        file_prefix = file.path(tempdir(), "ex"))
+    file_prefix = file.path(tempdir(), "ex")
+)
 head(out$edges)
 }

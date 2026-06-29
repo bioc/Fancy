@@ -22,10 +22,18 @@
 #' @export
 #' @examples
 #' tsv <- tempfile(fileext = ".tsv")
-#' writeLines(c(
-#'   "Strain\tDomain\tPhyla\tClass\tOrder\tFamily\tGenus\tSpecies",
-#'   "MAG1\td__Bacteria\tp__Bacillota_C\tc__Clostridia\to__Lachnospirales\tf__Lachnospiraceae\tg__Butyrivibrio\ts__Butyrivibrio sp1"
-#' ), tsv)
+#' header <- paste(
+#'     "Strain", "Domain", "Phyla", "Class", "Order",
+#'     "Family", "Genus", "Species",
+#'     sep = "\t"
+#' )
+#' row1 <- paste(
+#'     "MAG1", "d__Bacteria", "p__Bacillota_C", "c__Clostridia",
+#'     "o__Lachnospirales", "f__Lachnospiraceae", "g__Butyrivibrio",
+#'     "s__Butyrivibrio sp1",
+#'     sep = "\t"
+#' )
+#' writeLines(c(header, row1), tsv)
 #' tax <- parse_gtdb_taxonomy(tsv)
 #' tax$Phyla
 #'
@@ -35,51 +43,55 @@
 #' @importFrom rlang .data
 #' @importFrom stringr str_remove str_remove_all
 parse_gtdb_taxonomy <- function(
-    file,
-    strain_col = "Strain",
-    fill_missing = TRUE
+  file,
+  strain_col = "Strain",
+  fill_missing = TRUE
 ) {
-  tax <- readr::read_tsv(file, show_col_types = FALSE) |>
-    tibble::column_to_rownames(strain_col)
+    tax <- readr::read_tsv(file, show_col_types = FALSE) |>
+        tibble::column_to_rownames(strain_col)
 
-  # Strip rank prefixes and sub-designation suffixes
-  tax <- tax |>
-    dplyr::mutate(
-      Domain  = stringr::str_remove_all(.data$Domain,  ".*d__"),
-      Phyla   = stringr::str_remove_all(.data$Phyla,   ".*p__"),
-      Phyla   = stringr::str_remove_all(.data$Phyla,   "_..*"),
-      Class   = stringr::str_remove_all(.data$Class,   ".*c__"),
-      Order   = stringr::str_remove_all(.data$Order,   ".*o__"),
-      Family  = stringr::str_remove_all(.data$Family,  ".*f__"),
-      Genus   = stringr::str_remove_all(.data$Genus,   ".*g__"),
-      Genus   = stringr::str_remove_all(.data$Genus,   "_..*"),
-      Species = stringr::str_remove_all(.data$Species, ".*s__")
-    )
-
-  # Simplify Species: remove genus portion before space, strip trailing
-
-  # digits after "sp"
-  tax <- tax |>
-    dplyr::mutate(
-      Species = stringr::str_remove(.data$Species, ".*[[:space:]]"),
-      Species = stringr::str_remove(.data$Species, "(?<=sp)\\d.*")
-    )
-
-  # Fill missing values
-
-  if (fill_missing) {
+    # Strip rank prefixes and sub-designation suffixes
     tax <- tax |>
-      dplyr::mutate(
-        Family  = dplyr::if_else(.data$Family == "NA",
-                                 .data$Order, .data$Family),
-        Genus   = dplyr::if_else(.data$Genus == "NA",
-                                 .data$Family, .data$Genus),
-        Genus   = dplyr::if_else(.data$Genus == "",
-                                 .data$Family, .data$Genus),
-        Species = dplyr::if_else(.data$Species == "",
-                                 "sp", .data$Species)
-      )
-  }
+        dplyr::mutate(
+            Domain  = stringr::str_remove_all(.data$Domain, ".*d__"),
+            Phyla   = stringr::str_remove_all(.data$Phyla, ".*p__"),
+            Phyla   = stringr::str_remove_all(.data$Phyla, "_..*"),
+            Class   = stringr::str_remove_all(.data$Class, ".*c__"),
+            Order   = stringr::str_remove_all(.data$Order, ".*o__"),
+            Family  = stringr::str_remove_all(.data$Family, ".*f__"),
+            Genus   = stringr::str_remove_all(.data$Genus, ".*g__"),
+            Genus   = stringr::str_remove_all(.data$Genus, "_..*"),
+            Species = stringr::str_remove_all(.data$Species, ".*s__")
+        )
 
-  as.data.frame(tax)
+    # Simplify Species: remove genus portion before space, strip trailing
+
+    # digits after "sp"
+    tax <- tax |>
+        dplyr::mutate(
+            Species = stringr::str_remove(.data$Species, ".*[[:space:]]"),
+            Species = stringr::str_remove(.data$Species, "(?<=sp)\\d.*")
+        )
+
+    # Fill missing values
+
+    if (fill_missing) {
+        tax <- tax |>
+            dplyr::mutate(
+                Family = dplyr::if_else(.data$Family == "NA",
+                    .data$Order, .data$Family
+                ),
+                Genus = dplyr::if_else(.data$Genus == "NA",
+                    .data$Family, .data$Genus
+                ),
+                Genus = dplyr::if_else(.data$Genus == "",
+                    .data$Family, .data$Genus
+                ),
+                Species = dplyr::if_else(.data$Species == "",
+                    "sp", .data$Species
+                )
+            )
+    }
+
+    as.data.frame(tax)
 }

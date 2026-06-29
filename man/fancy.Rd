@@ -10,7 +10,7 @@ fancy(
   k = 5L,
   find_k = FALSE,
   k_values = c(2L, 3L, 4L, 5L, 6L, 7L, 8L, 10L, 15L, 18L, 20L),
-  cpus = 4L,
+  cpus = 1L,
   use_mrnet = TRUE,
   w1 = 0.3,
   w2 = 0.7,
@@ -37,7 +37,8 @@ automatically via the elbow method (default \code{FALSE}).}
 \item{k_values}{Integer vector of k values to evaluate when
 \code{find_k = TRUE}.}
 
-\item{cpus}{Integer; number of parallel workers (default 4).}
+\item{cpus}{Integer; number of parallel workers (default 1). Increase
+to parallelise bootstrap iterations across cores.}
 
 \item{use_mrnet}{Logical; if \code{TRUE} (default), apply MRNET to the MI
 matrix for sparse edge selection.}
@@ -67,7 +68,7 @@ multiplicative mode. See \code{\link[=hybrid_score]{hybrid_score()}}.}
 \item{verbose}{Logical; if \code{TRUE} (default), emit progress messages.}
 }
 \value{
-A list with class \code{"fancy"} containing:
+A \linkS4class{FancyResult} S4 object with slots:
 \describe{
 \item{\code{edges}}{The final thresholded edge data.frame.}
 \item{\code{all_edges}}{All scored edges before thresholding (for
@@ -79,6 +80,7 @@ that were dropped by the pre-filter.}
 \item{\code{n_bootstrap}}{Number of bootstrap iterations run.}
 \item{\code{params}}{List of all parameters for reproducibility.}
 }
+Slots can be read with \code{$} (e.g. \code{result$edges}) or \code{@}.
 }
 \description{
 Convenience wrapper that chains preprocessing, bootstrap network inference,
@@ -93,4 +95,7 @@ result <- fancy(t(fancy_tiny_clr), n_bootstrap = 2, cpus = 1)
 head(result$edges)
 plot(result)
 }
+}
+\seealso{
+\linkS4class{FancyResult}
 }

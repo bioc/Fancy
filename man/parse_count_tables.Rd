@@ -46,9 +46,13 @@ default (\code{drop_first_row = TRUE}).
 \examples{
 d <- tempfile("tsvdir")
 dir.create(d)
-writeLines(c("MAG\tcount\trel_abund\tcov_frac",
-  "MAG1\t100\t0.5\t0.8", "MAG2\t200\t0.3\t0.6"),
-  file.path(d, "sample1.tsv"))
+writeLines(
+    c(
+        "MAG\tcount\trel_abund\tcov_frac",
+        "MAG1\t100\t0.5\t0.8", "MAG2\t200\t0.3\t0.6"
+    ),
+    file.path(d, "sample1.tsv")
+)
 tables <- parse_count_tables(d, drop_first_row = FALSE)
 tables$count
 

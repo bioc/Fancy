@@ -11,14 +11,13 @@ test_that("fancy() runs end-to-end on a tiny CLR matrix", {
         verbose = FALSE
     )
 
-    expect_s3_class(result, "fancy")
-    expect_named(result,
+    expect_s4_class(result, "FancyResult")
+    expect_true(all(
         c(
             "edges", "all_edges", "all_edges_unfiltered",
             "k", "n_bootstrap", "params"
-        ),
-        ignore.order = TRUE
-    )
+        ) %in% slotNames(result)
+    ))
     expect_s3_class(result$edges, "data.frame")
     expect_true("HybridScore" %in% colnames(result$edges))
     expect_true(all(c("source", "target") %in% colnames(result$edges)))

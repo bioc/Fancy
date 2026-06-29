@@ -8,7 +8,7 @@ bootstrap_networks(
   data,
   n_bootstrap = 100L,
   k = 5L,
-  cpus = 4L,
+  cpus = 1L,
   use_mrnet = TRUE,
   save_path = NULL
 )
@@ -42,8 +42,10 @@ networks, and returns edge lists. Results are collected into a single
 named list.
 }
 \examples{
-small_mat <- matrix(rnorm(50), nrow = 10, ncol = 5,
-                    dimnames = list(NULL, paste0("V", 1:5)))
+small_mat <- matrix(rnorm(50),
+    nrow = 10, ncol = 5,
+    dimnames = list(NULL, paste0("V", 1:5))
+)
 res <- bootstrap_networks(small_mat, n_bootstrap = 2, k = 2L, cpus = 1)
 names(res)[1:4]
 

@@ -25,8 +25,9 @@ BiocManager::install("Fancy")
 
 ```
 Fancy/
-├── R/                 Core source code (13 files)
+├── R/                 Core source code (14 files)
 │   ├── fancy.R            Main pipeline wrapper
+│   ├── FancyResult-class.R  S4 result class, validity, show/$ methods
 │   ├── bootstrap.R        Parallel bootstrap network inference (snowfall)
 │   ├── mi_network.R       Mutual information matrices (kNN estimator)
 │   ├── dcor_network.R     Distance correlation matrices (energy::dcor)
@@ -34,19 +35,21 @@ Fancy/
 │   ├── preprocess.R       MAG filtering by coverage and prevalence
 │   ├── parse_count_tables.R  Sample name cleaning
 │   ├── parse_taxonomy.R   GTDB taxonomy parsing
-│   ├── plot.R             S3 plot method for fancy objects
+│   ├── plot.R             S4 plot method + network/elbow plotting
 │   ├── export.R           Cytoscape export with phyla colour palette
 │   ├── utils.R            Internal helpers
 │   ├── data.R             Dataset documentation
 │   └── Fancy-package.R    Package-level documentation
 │
-├── man/               roxygen2-generated documentation (31 .Rd files)
+├── man/               roxygen2-generated documentation (.Rd files)
 │
-├── data/              Bundled example data
-│   └── fancy_tiny.rda     Contains 5 datasets (100 MAGs x 321 samples):
-│                          fancy_tiny_clr, fancy_tiny_counts,
-│                          fancy_tiny_coverage, fancy_tiny_taxonomy,
-│                          fancy_tiny_metadata
+├── data/              Bundled example data (100 MAGs x 321 samples),
+│   │                  one dataset per .rda file:
+│   ├── fancy_tiny_clr.rda
+│   ├── fancy_tiny_counts.rda
+│   ├── fancy_tiny_coverage.rda
+│   ├── fancy_tiny_taxonomy.rda
+│   └── fancy_tiny_metadata.rda
 │
 ├── inst/extdata/      Reserved for external example data files
 │
